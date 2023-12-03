@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Impara le tabelline :-)</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+    <style>
+        body {
+            font-family: tahoma, verdana, sans-serif;
+        }
+        #lancia {
+            height: 60px;
+        }
+        #credits {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+        }
+        #credits, #credits a {
+            color: #888!important;
+        }
+        .verify {
+            font-size: 1.7em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <div class="row mt-3">
+            <div class="col-12 col-md-6">
+                <span class="text-success display-4 font-weight-bold mt-3">Impara le tabelline &#129322;</span>
+            </div>
+            <div class="col-12 col-md-4">
+                <h3 class="text-success">&#128522; <span id="good">0</span> risp.</h3>
+                <h3 class="text-danger">&#128533; <span id="bad">0</span> risp.</h3>
+                <h3 class="">&#128348; <span id="avg_time">0</span> sec/risp. (media)</h3>
+            </div>
+        </div>
+
+        <div class="row mt-3">
+            <div class="col-12">
+                <form class="form">
+                    <div class="form-group mb-2">
+                        <span class="float-right" id="guide" data-toggle="popover">
+                            &#129300;
+                        </span>
+                        <label for="tabellina">Ripassa la tabellina del:</label>
+                        <input type="text" id="tabellina" value="" placeholder="Un numero da 1 a 10..." class="form-control">
+                    </div>
+                </form>
+            </div>
+
+        </div>
+        <div class="row mt-3">
+            <div id="curr_tab" class="col-8 h5"></div>
+        </div>
+        <div class="row mt-2">
+            <div class="col-6">
+                <h2 class="text-primary font-weight-bold">Quanto fa<br><span id="quiz">...</span> ?</h2>
+            </div>
+            <div class="col-4">
+                <input type="button" id="lancia" value="Lancia!" class="btn btn-warning">
+            </div>
+        </div>
+        <div class="row mt-2">
+            <div class="col-12">
+                <div id="message" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+    <div id="credits">
+        Author: <a href="https://www.facebook.com/lorenzo.sanzari" target="_blank">Lorenzo Sanzari</a> &copy; 2023
+    </div>
+</body>
+
+<script>
+
+    class Tabelline {
+
+        ready = false;
+        curr_tab = null;
+        result = null;
+        last_pos = 0;
+        last_fact = 0;
+        start_time = 0;
+        avg_time = 0;
+
+        //Controlli
+        _message = $('#message');
+        _tabellina = $('#tabellina');
+        _curr_tab = $('#curr_tab');
+        _avg_time = $('#avg_time');
+        _lancia = $('#lancia');
+        _quiz = $('#quiz');
+
+        randomIntNum(min, max) {
+            var num = null;
+            do {
+                num = parseInt(Math.random() * (max - min) + min);
+            } while (num == this.last_fact || num == this.last_pos);
+            return num;
+        }
+
+        createAnswers() {
+
+            var ans_num = 5; //numero risposte possibili
+            var answers = []; //tutte le risposte
+            var random_pos = this.randomIntNum(0, (ans_num - 1)); //posizione casuale risposta giusta
+
+            for (var i = 0; i < ans_num; i++) {
+                if (i === random_pos) {
+                    answers[i] = '<input type="button" value="' + this.result + '" class="verify btn btn-primary ml-2"/>'; //risposta giusta
+                } else {
+                    answers[i] = '<input type="button" value="' + this.randomIntNum(0, (this.curr_tab * 10)) + '" class="verify btn btn-primary  ml-2"/>';
+                }
+            }
+            this.last_pos = random_pos;
+            return answers.join(" ");
+        }
+
+        resetApp() {
+            this.curr_tab = null;
+            this.result = null;
+            this.last_pos = 0;
+            this.last_fact = 0;
+            this.start_time = 0;
+            this.avg_time = 0;
+            this._message.text('');
+            $('#good, #bad, #avg_time').text('0');
+        }
+
+        start() {
+
+            this._tabellina.on('blur', function (evt) {
+
+                this.resetApp();
+                this.curr_tab = this._tabellina.val();
+                if (!this.curr_tab) {
+                    alert("Imposta una tabellina!");
+                    return;
+                }
+                
+                if (isNaN(this.curr_tab)) {
+                    alert("Devi inserire un numero!");
+                    return;
+                }
+                if (this.curr_tab < 1 || this.curr_tab > 10) {
+                    alert("Imposta una tabellina da 1 a 10!");
+                    this._tabellina.val('');
+                    return;
+                }
+
+                this._curr_tab.html("Stai ripassando la tabellina del <strong>" + this.curr_tab + '</strong>');
+                //this._tabellina.val('');
+            }.bind(this));
+
+
+            this._tabellina.on('focus',
+                function (evt) {
+
+                    $(evt.target).val('');
+
+                    this._curr_tab.text('');
+
+                }.bind(this));
+
+            this._lancia.on('click',
+                function () {
+                    if (!this.curr_tab) {
+                        alert("Imposta una tabellina!");
+                        return;
+                    }
+                    this.start_time = Date.now();
+                    this._message.text('');
+                    var fact = parseInt(this.randomIntNum(0, 10)); //random
+                    this._quiz.html(this.curr_tab + ' x <span class="text-warning">' + fact + '</span>');
+                    this.result = this.curr_tab * fact;
+                    this.last_fact = fact;
+                    this._message.html(this.createAnswers());
+                    //Inizializza listeners sui risultati proposti
+                    $('.verify').on('click', function (evt) {
+
+                        var my_answer = $(evt.target).val();
+                        console.log(my_answer);
+
+                        if (parseInt(my_answer) === parseInt(this.result)) {
+                            $('#message').html('<span class="h3 text-success font-weight-bold">Siiiiii...fa proprio ' + this.result + '!!! &#128522;</span>');
+                            $('#good').text(parseInt($('#good').text()) + 1);
+                        } else {
+                            this._message.html('<span class="h3 text-danger  font-weight-bold">Mi spiace, hai sbagliato! &#128533;<br>Il risultato corretto è <span class="text-success font-weight-bold">' + this.result + '</span>!</span>');
+                            $('#bad').text(parseInt($('#bad').text()) + 1);
+                        }
+                        this.avg_time = (this.avg_time + (Date.now() - this.start_time)) / 2;
+                        this._avg_time.text((this.avg_time / 1000).toFixed(2));
+
+                    }.bind(this));
+                }.bind(this));
+
+        }
+
+    }
+
+    $(document).ready(function () {
+
+        $('#guide').popover({
+            'html': true,
+            'placement': 'auto',
+            'content': "<h4>Istruzioni:</h4><br>Per ripassare una tabellina, es. quella del 5, inserire 5 nel campo di input in alto e cliccare su 'Lancia', poi tentare una delle risposte proposte.<br>Per iniziare una nuova tabellina, inserire un nuovo valore e rilanciare.<br>Buon divertimento! &#128522;"
+        });
+
+        $('html').on('click',
+            function (e) {
+                if ($(e.target).prop('id') != 'guide') {
+                    $('#guide').popover('hide');
+                }
+            });
+
+        var tabelline = new Tabelline();
+        tabelline.start();
+
+    });
+</script>
+</html>
